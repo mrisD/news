@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配置详情</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>配置详情</h1>
+        <table class="table table-bordered">
+            <tr>
+                <th>栏目ID</th>
+                <td>{{ config._id }}</td>
+            </tr>
+            <tr>
+                <th>配置名称</th>
+                <td>{{ config.name }}</td>
+            </tr>
+            <tr>
+                <th>创建时间</th>
+                <td>{{ config.created_time }}</td>
+            </tr>
+            <tr>
+                <th>创建人</th>
+                <td>{{ config.creator }}</td>
+            </tr>
+            <tr>
+                <th>最后修改时间</th>
+                <td>{{ config.modified_time }}</td>
+            </tr>
+            <tr>
+                <th>资源链接</th>
+                <td>
+                    <a href="http{{ 's' if config.resource_link.startswith('https') else '' }}://{{ config.resource_link }}" target="_blank">
+                        {{ config.resource_link }}
+                    </a>
+                </td>
+            </tr>
+
+        </table>
+        <div class="mt-3">
+            <!-- 返回按钮 -->
+            <button class="btn btn-secondary" onclick="window.history.back()">返回</button>
+            <!-- 创建抓取配置按钮 -->
+            <button class="btn btn-primary" id="createConfigBtn">创建抓取配置</button>
+            <a id="createConfigLink" class="btn btn-primary">创建抓取配置2</a>
+
+        </div>
+    </div>
+
+    <!-- 创建抓取配置弹窗（Modal） -->
+    <div class="modal fade" id="createConfigModal" tabindex="-1" aria-labelledby="createConfigModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createConfigModalLabel">创建抓取配置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createConfigForm">
+                        <div class="mb-3">
+                            <label for="startUrl" class="form-label">起始 URL</label>
+                            <input type="url" class="form-control" id="startUrl" required>
+                            <small class="form-text text-danger d-none" id="urlError">请输入有效的 URL</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="pages" class="form-label">页数</label>
+                            <input type="number" class="form-control" id="pages" required min="1">
+                            <small class="form-text text-danger d-none" id="pagesError">页数必须大于等于 1</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="requestMethod" class="form-label">请求方式</label>
+                            <select class="form-select" id="requestMethod" required>
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="listdatatype" class="form-label">列表页数据类型</label>
+                            <select class="form-select" id="listdatatype" required>
+                                <option value="html">html</option>
+                                <option value="json">json</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="xpathFieldsList" class="form-label">列表页字段 XPath</label>
+                            <textarea class="form-control" id="xpathFieldsList" rows="3" required></textarea>
+                            <small class="form-text text-muted">每行一个 XPath</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="detaildatatype" class="form-label">详情页数据类型</label>
+                            <select class="form-select" id="detaildatatype" required>
+                                <option value="html">html</option>
+                                <option value="json">json</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="xpathFieldsDetail" class="form-label">详情页字段 XPath</label>
+                            <textarea class="form-control" id="xpathFieldsDetail" rows="3" required></textarea>
+                            <small class="form-text text-muted">每行一个 XPath</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tasktime" class="form-label">定时任务</label>
+                            <textarea class="form-control" id="tasktime" rows="3" required></textarea>
+                            <small class="form-text text-muted">每行一个 定时任务</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveConfigBtn">保存配置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // 从 URL 中提取 _id 参数
+    function getCrawlerIdFromUrl() {
+        const url = window.location.href; // 获取当前页面 URL
+        const segments = url.split('/'); // 按斜杠分割 URL
+        return segments[segments.length - 1]; // 提取最后一段作为 _id
+    }
+    // 动态设置创建抓取配置按钮的链接
+    document.addEventListener('DOMContentLoaded', function () {
+        const crawlerId = getCrawlerIdFromUrl(); // 获取当前页面的 ID
+        const createConfigLink = document.getElementById('createConfigLink'); // 获取按钮元素
+        if (createConfigLink) {
+            createConfigLink.href = `/create-config/${crawlerId}`; // 动态设置 href
+        }
+    });
+    // 初始化模态框
+    const modal = new bootstrap.Modal(document.getElementById('createConfigModal'));
+
+    // 打开模态框
+    document.getElementById('createConfigBtn').addEventListener('click', function () {
+        modal.show();
+    });
+
+    // 表单校验函数
+    function validateForm() {
+        let isValid = true;
+
+        // 校验 URL
+        const url = document.getElementById('startUrl').value;
+        const urlError = document.getElementById('urlError');
+        const urlRegex = /^(https?:\/\/)?([\w\-]+\.)+[a-z]{2,}(\/[\w\-./?%&=]*)?$/i;
+        if (!urlRegex.test(url)) {
+            urlError.classList.remove('d-none');
+            isValid = false;
+        } else {
+            urlError.classList.add('d-none');
+        }
+
+        // 校验页数
+        const pages = document.getElementById('pages').value;
+        const pagesError = document.getElementById('pagesError');
+        if (parseInt(pages) < 1) {
+            pagesError.classList.remove('d-none');
+            isValid = false;
+        } else {
+            pagesError.classList.add('d-none');
+        }
+
+        return isValid;
+    }
+
+    // 保存配置
+    document.getElementById('saveConfigBtn').addEventListener('click', function () {
+        if (!validateForm()) {
+            return; // 如果表单无效，停止提交
+        }
+
+        // 获取表单数据
+        const startUrl = document.getElementById('startUrl').value;
+        const pages = document.getElementById('pages').value;
+        const requestMethod = document.getElementById('requestMethod').value;
+        const listdatatype = document.getElementById('listdatatype').value;
+        const detaildatatype= document.getElementById('detaildatatype').value;
+        const xpathFieldsList = document.getElementById('xpathFieldsList').value.split('\n');
+        const xpathFieldsDetail = document.getElementById('xpathFieldsDetail').value.split('\n');
+        const tasktime = document.getElementById('tasktime').value.split('\n');
+        // 准备要追加的配置数据
+        const newConfig = {
+            start_url: startUrl,
+            pages: parseInt(pages),
+            request_method: requestMethod,
+            listdatatype:listdatatype,
+            xpathFieldsList: xpathFieldsList,
+            detaildatatype:detaildatatype,
+            xpathFieldsDetail:xpathFieldsDetail,
+            tasktime:tasktime,
+        };
+
+        // 获取 _id
+        const crawlerId = getCrawlerIdFromUrl();
+
+        // 发送 PUT 请求将新配置添加到现有 config 字段中
+        fetch(`/api/crawlers/${crawlerId}`, {
+            method: 'PUT', // 或者 PATCH，根据后端需求调整
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: "add_config", // 发送一个动作参数，让后端明确操作
+                new_config: newConfig,
+            }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "Crawler updated successfully") {
+                    alert('配置已成功添加');
+                    // 更新页面显示（如果有必要刷新整个页面）
+                    window.location.reload();
+                } else {
+                    alert(`保存失败：${data.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('网络错误，请稍后重试');
+            });
+
+        // 清空表单并关闭模态框
+        document.getElementById('createConfigForm').reset();
+        modal.hide();
+    });
+</script>
+
+</body>
+</html>

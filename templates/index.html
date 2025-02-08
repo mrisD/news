@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>招采内网抓取资源</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">新闻信息招采内网抓取资源</h1>
+
+        <!-- 搜索表单 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <label for="resource-name" class="form-label">资源名称：</label>
+                <input type="text" class="form-control" id="resource-name" placeholder="请输入">
+            </div>
+            <div class="col-md-3">
+                <label for="column-id" class="form-label">栏目ID：</label>
+                <input type="text" class="form-control" id="column-id" placeholder="请输入">
+            </div>
+            <div class="col-md-3">
+                <label for="resource-link" class="form-label">资源链接：</label>
+                <input type="text" class="form-control" id="resource-link" placeholder="请输入">
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">启用：</label>
+                <select class="form-select" id="status">
+                    <option value="">请选择</option>
+                    <option value="1">启用</option>
+                    <option value="0">禁用</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 新建按钮 -->
+        <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#createModal">+ 新建</button>
+
+        <!-- 表格 -->
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th scope="col">资源名称</th>
+                    <th scope="col">栏目ID</th>
+                    <th scope="col">资源链接</th>
+                    <th scope="col">资源级别</th>
+                    <th scope="col">所属人</th>
+                    <th scope="col">启用</th>
+                    <th scope="col">修改时间</th>
+                    <th scope="col">操作</th>
+                </tr>
+            </thead>
+            <tbody id="crawler-table-body">
+                <!-- 动态填充数据 -->
+            </tbody>
+        </table>
+
+        <!-- 分页控件 -->
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center" id="pagination">
+                <li class="page-item"><a class="page-link" href="#" onclick="changePage(1)">首页</a></li>
+                <li class="page-item"><a class="page-link" href="#" onclick="changePage(currentPage - 1)" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>
+                <li class="page-item"><a class="page-link" href="#" onclick="changePage(currentPage + 1)" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>
+                <li class="page-item"><a class="page-link" href="#" onclick="changePage(totalPages)">尾页</a></li>
+                <li class="page-item dropdown">
+                    <a class="page-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">10 / 页</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="changePageSize(10)">10 / 页</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changePageSize(20)">20 / 页</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changePageSize(50)">50 / 页</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 新建模态框 -->
+        <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createModalLabel">新建爬虫配置</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="create-form">
+                            <div class="mb-3">
+                                <label for="create-resource-name" class="form-label">资源名称</label>
+                                <input type="text" class="form-control" id="create-resource-name" name="resource-name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="create-column-id" class="form-label">栏目ID</label>
+                                <input type="text" class="form-control" id="create-column-id" name="column-id" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="create-resource-link" class="form-label">资源链接</label>
+                                <input type="text" class="form-control" id="create-resource-link" name="resource-link" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="create-status" class="form-label">启用</label>
+                                <select class="form-select" id="create-status" name="status" required>
+                                    <option value="1">启用</option>
+                                    <option value="0">禁用</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                        <button type="button" class="btn btn-primary" onclick="saveCrawler()">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let pageSize = 10;
+    let currentCrawlerId = null;  // 用于标记当前编辑的爬虫配置
+
+    // 初始化加载数据
+    function fetchCrawlers(page) {
+        $.get(`/api/crawlers?page=${page}&limit=${pageSize}`, function (data) {
+            totalPages = data.total_pages;
+            currentPage = data.current_page;
+
+            // 渲染表格数据
+            const tbody = $('#crawler-table-body');
+            tbody.empty();
+            data.data.forEach(crawler => {
+                const row = `<tr>
+                    <td>${crawler['resource-name']}</td>
+                    <td>${crawler['column-id']}</td>
+                    <td>${crawler['resource-link']}</td>
+                    <td>${crawler['resource-level']}</td>
+                    <td>${crawler['owner']}</td>
+                    <td>${crawler['status'] == 1 ? '启用' : '禁用'}</td>
+                    <td>${crawler['modified_time']}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editCrawler('${crawler['_id']}')">编辑</button>
+                         <button class="btn btn-primary btn-sm" onclick="viewDetails('${crawler['_id']}')">查看</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCrawler('${crawler['_id']}')">删除</button>
+                    </td>
+                </tr>`;
+                tbody.append(row);
+            });
+
+            // 更新分页控件
+            updatePagination();
+        });
+    }
+
+    // 更新分页控件
+    function updatePagination() {
+        const pagination = $('#pagination');
+        pagination.empty();
+
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(1)">首页</a></li>`);
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(currentPage - 1)" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>`);
+
+        for (let i = 1; i <= totalPages; i++) {
+            pagination.append(`<li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+            </li>`);
+        }
+
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(currentPage + 1)" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>`);
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(totalPages)">尾页</a></li>`);
+    }
+
+    // 改变当前页面
+    function changePage(page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        fetchCrawlers(page);
+    }
+
+    // 改变每页显示条数
+    function changePageSize(size) {
+        pageSize = size;
+        fetchCrawlers(1);  // 重置为第一页
+    }
+
+    // 编辑爬虫配置
+    function editCrawler(id) {
+        currentCrawlerId = id;
+        $.get(`/api/crawlers/${id}`, function (data) {
+            const crawler = data.data;
+            $('#create-resource-name').val(crawler['resource-name']);
+            $('#create-column-id').val(crawler['column-id']);
+            $('#create-resource-link').val(crawler['resource-link']);
+            $('#create-status').val(crawler['status']);
+            $('#createModalLabel').text('编辑爬虫配置');
+            $('#createModal').modal('show');
+        });
+    }
+
+    // 保存爬虫配置（新建或编辑）
+    function saveCrawler() {
+        const formData = new FormData(document.getElementById('create-form'));
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+
+        if (currentCrawlerId) {
+            // 更新
+            $.ajax({
+                url: `/api/crawlers/${currentCrawlerId}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function () {
+                    alert('更新成功');
+                    $('#createModal').modal('hide');
+                    currentCrawlerId = null;
+                    fetchCrawlers(currentPage);  // 刷新数据
+                },
+                error: function () {
+                    alert('更新失败');
+                }
+            });
+        } else {
+            // 新建
+            $.ajax({
+                url: '/api/crawlers',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (response) {
+                    alert('创建成功');
+                    $('#createModal').modal('hide');
+                    fetchCrawlers(currentPage);  // 刷新数据
+                },
+                error: function () {
+                    alert('创建失败');
+                }
+            });
+        }
+    }
+
+    // 删除爬虫配置
+    function deleteCrawler(id) {
+        if (confirm('确定删除该爬虫配置？')) {
+            $.ajax({
+                url: `/api/crawlers/${id}`,
+                type: 'DELETE',
+                success: function () {
+                    alert('删除成功');
+                    fetchCrawlers(currentPage);  // 刷新数据
+                },
+                error: function () {
+                    alert('删除失败');
+                }
+            });
+        }
+    }
+    function viewDetails(configId) {
+    window.location.href = `/config-details/${configId}`;
+}
+
+    // 初始化页面
+    $(document).ready(function () {
+        fetchCrawlers(currentPage);
+    });
+    </script>
+</body>
+
+</html>
