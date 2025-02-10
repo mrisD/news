@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>配置详情</title>
@@ -66,13 +67,13 @@
             </thead>
             <tbody id="configTableBody">
                 <tr>
-                        <td>{{ config.new_config.pzname | default('无配置') }}</td>
-                    {% if config.new_config.pzname %}
-                        <td>
-                            <a id="createConfigLink2" class="btn btn-primary">查看</a>
-                            <button class="btn btn-danger btn-sm" onclick="deleteConfig()">删除</button>
-                        </td>
-                    {% endif %}
+                        <td>{{ config.get('new_config', {}).get('pzname', '无配置') }}</td>
+                        {% if config.get('new_config') and config['new_config'].get('pzname') %}
+                            <td>
+                                <a id="createConfigLink2" class="btn btn-primary">查看</a>
+                                <button class="btn btn-danger btn-sm" onclick="deleteCrawler()">删除</button>
+                            </td>
+                        {% endif %}
                     </tr>
             </tbody>
         </table>
@@ -101,6 +102,25 @@
             createConfigLink2.href = `/create-config/${crawlerId}`; // 动态设置 href
         }
     });
+
+    // 删除爬虫配置
+    function deleteCrawler() {
+    if (confirm('确定删除该爬虫配置以及定时任务？')) {
+        const crawlerId = getCrawlerIdFromUrl(); // 获取当前页面的 ID
+        fetch(`/api/crawlers/detaildelete/${crawlerId}`, {
+            method: 'DELETE',
+        })
+        .then(response => {
+            if (response.status === 200) {
+                alert('删除成功');
+                location.reload();  // 刷新数据
+            } else {
+                alert('删除失败');
+            }
+        })
+
+    }
+}
 
 </script>
 

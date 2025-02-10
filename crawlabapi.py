@@ -11,6 +11,7 @@ class CrawlabApi:
         url = "http://localhost:8080/api/schedules"
         payload = json.dumps({
             "enabled": True,
+            "param" : f"-a config=\'{json.dumps(data)}\'",
             "mode": "random",
             "priority": 5,
             "name": spidername,
@@ -40,3 +41,5 @@ class CrawlabApi:
         response = requests.request("POST", url, headers=headers, data=payload)
 
         return response
+    #def deletspider(self, data):
+

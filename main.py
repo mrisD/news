@@ -3,6 +3,10 @@ from bson import ObjectId
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from crawlabapi import CrawlabApi
+"""
+将列表页与详情页分开
+列表页详情页公用一个更新函数所以即使不是新增配置也会增加定时任务
+"""
 app = Flask(__name__)
 
 # MongoDB连接配置
@@ -92,11 +96,25 @@ def update_crawler(crawler_id):
         data = request.get_json()  # 获取前端发送的JSON数据
         result = collection.update_one({"_id": ObjectId(crawler_id)}, {"$set": data})
         if result.modified_count > 0:
-            datas=CrawlabApi.addspider(data).json()
-            if datas['status']=='ok':
-                return jsonify({"message": "Crawler updated successfully"}), 200
+            referer = request.headers.get('Referer')  # 获取 Referer 头部信息
+            print(referer)
+            if referer!='http://127.0.0.1:8888/':
+                datas=CrawlabApi.addspider(data).json()
+                if datas['status']=='ok':
+                    timetaskid=datas['data']['_id']
+                    # 执行更新操作，添加新的字段
+                    result = collection.update_one(
+                        {"_id": ObjectId(crawler_id)},  # 根据 _id 查找文档
+                        {"$set": {"timetaskid":timetaskid}}  # 添加或更新字段
+                    )
+                    if result.modified_count > 0:
+                        return jsonify({"message": "Crawler updated successfully"}), 200
+                    else:
+                        return jsonify({"message": "Crawler not found or no changes made"}), 404
+                else:
+                    return jsonify(datas), 403
             else:
-                return jsonify(datas), 403
+                return jsonify({"message": "Crawler updated successfully"}), 200
         else:
             return jsonify({"message": "No changes made or crawler not found"}), 404
     except Exception as e:
@@ -126,6 +144,19 @@ def delete_crawler(crawler_id):
         return jsonify({"message": "Crawler deleted"}), 200
     else:
         return jsonify({"message": "Crawler not found"}), 404
+
+#删除指定爬虫的配置
+@app.route('/api/crawlers/detaildelete/<string:crawler_id>', methods=['DELETE'])
+def delete_detailcrawler(crawler_id):
+    # 执行更新操作，删除指定字段
+    result = collection.update_one(
+        {"_id": ObjectId(crawler_id)},  # 根据 _id 查找文档
+        {"$unset": {"new_config": ""}}  # 删除指定字段
+    )
+    if result.modified_count > 0:
+        return jsonify({"message": "Config field deleted"}), 200
+    else:
+        return jsonify({"message": "Crawler not found or no field to delete"}), 404
 #查看指定_id的配置信息
 @app.route('/config-details/<string:config_id>', methods=['GET'])
 def config_details(config_id):
@@ -145,6 +176,9 @@ def config_details(config_id):
         return render_template('details.html', config=config)
     except Exception as e:
         return jsonify({"message": str(e)}), 500
+
+
+
 
 
 @app.route('/create-config/<crawler_id>')

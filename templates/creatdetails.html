@@ -201,9 +201,11 @@
             method: 'PUT', // 或者 PATCH，根据后端需求调整
             headers: {
                 'Content-Type': 'application/json',
+
             },
+
             body: JSON.stringify({
-                action: "add_config", // 发送一个动作参数，让后端明确操作
+
                 new_config: newConfig,
             }),
         })
