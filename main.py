@@ -126,7 +126,7 @@ def delete_crawler(crawler_id):
         return jsonify({"message": "Crawler deleted"}), 200
     else:
         return jsonify({"message": "Crawler not found"}), 404
-#查看
+#查看指定_id的配置信息
 @app.route('/config-details/<string:config_id>', methods=['GET'])
 def config_details(config_id):
     try:
