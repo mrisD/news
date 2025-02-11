@@ -90,7 +90,7 @@ def create_crawler():
 
 # 更新爬虫配置
 @app.route('/api/crawlers/<string:crawler_id>', methods=['PUT'])
-def update_crawler(crawler_id):
+async def update_crawler(crawler_id):
 
     try:
         data = request.get_json()  # 获取前端发送的JSON数据
@@ -98,7 +98,7 @@ def update_crawler(crawler_id):
         if result.modified_count > 0:
             referer = request.headers.get('Referer')  # 获取 Referer 头部信息
             if referer!='http://127.0.0.1:8888/':
-                datas=CrawlabApi.addspider(data).json()
+                datas=await CrawlabApi.addspider(data)
                 if datas['status']=='ok':
                     timetaskid=datas['data']['_id']
                     # 执行更新操作，添加新的字段
@@ -146,7 +146,7 @@ def delete_crawler(crawler_id):
 
 #删除指定爬虫的配置
 @app.route('/api/crawlers/detaildelete/<string:crawler_id>', methods=['DELETE'])
-def delete_detailcrawler(crawler_id):
+async def delete_detailcrawler(crawler_id):
     # 执行更新操作，删除指定字段
     result = collection.update_one(
         {"_id": ObjectId(crawler_id)},  # 根据 _id 查找文档
@@ -161,7 +161,7 @@ def delete_detailcrawler(crawler_id):
         # 查询文档
         result2 = collection.find_one(query, projection)
         if result2:
-            result3=CrawlabApi.deletspider(result2)
+            result3=await CrawlabApi.deletspider(result2)
             if result3=='ok':
                 return jsonify({"message": "Config field deleted"}), 200
             else:

@@ -1,3 +1,4 @@
+import aiohttp
 import requests
 import json
 
@@ -5,7 +6,7 @@ import json
 class CrawlabApi:
     def __init__(self):
         self.Authorization = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3YTZjYWFkMzAyMzNjOTIzNTAyNWM3ZCIsIm5iZiI6MTczODk4NDEyMywidXNlcm5hbWUiOiJhZG1pbiJ9.9xPs8dZ_0QwUh1uL_X-N58XoxsSFvBg6c7PUqSO0k3U'
-    def addspider(self, data):
+    async def addspider(self, data):
         spidername=data['new_config']['spidername']
         tasktime=data['new_config']['tasktime'][0]
         url = "http://localhost:8080/api/schedules"
@@ -37,11 +38,10 @@ class CrawlabApi:
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"macOS"'
         }
-
-        response = requests.request("POST", url, headers=headers, data=payload)
-
-        return response
-    def deletspider(self, data):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, data=payload) as response:
+                return  response.json()
+    async def deletspider(self, data):
         tasktimeid=data["timetaskid"]
         url = f"http://127.0.0.1:8080/api/schedules/{tasktimeid}"
 
@@ -63,10 +63,10 @@ class CrawlabApi:
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"macOS"'
         }
-
-        response = requests.request("DELETE", url, headers=headers, data=payload)
-        if response.status_code == 200:
-            return "ok"
-        else:
-            return "no ok"
+        async with aiohttp.ClientSession() as session:
+            async with session.delete(url, headers=headers, data=payload) as response:
+                if response.status == 200:
+                    return "ok"
+                else:
+                    return "no ok"
 
