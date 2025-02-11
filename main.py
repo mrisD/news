@@ -97,7 +97,6 @@ def update_crawler(crawler_id):
         result = collection.update_one({"_id": ObjectId(crawler_id)}, {"$set": data})
         if result.modified_count > 0:
             referer = request.headers.get('Referer')  # 获取 Referer 头部信息
-            print(referer)
             if referer!='http://127.0.0.1:8888/':
                 datas=CrawlabApi.addspider(data).json()
                 if datas['status']=='ok':
@@ -153,8 +152,21 @@ def delete_detailcrawler(crawler_id):
         {"_id": ObjectId(crawler_id)},  # 根据 _id 查找文档
         {"$unset": {"new_config": ""}}  # 删除指定字段
     )
+
     if result.modified_count > 0:
-        return jsonify({"message": "Config field deleted"}), 200
+        # 指定 _id 和要查询的字段
+        document_id = crawler_id
+        query = {"_id": ObjectId(document_id)}  # 查询条件
+        projection = {"timetaskid": 1}  # 投影，指定返回的字段
+        # 查询文档
+        result2 = collection.find_one(query, projection)
+        if result2:
+            result3=CrawlabApi.deletspider(result2)
+            if result3=='ok':
+                return jsonify({"message": "Config field deleted"}), 200
+            else:
+                return jsonify({"message": "Crawler not found or no field to delete"}), 404
+
     else:
         return jsonify({"message": "Crawler not found or no field to delete"}), 404
 #查看指定_id的配置信息

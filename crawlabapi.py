@@ -41,5 +41,32 @@ class CrawlabApi:
         response = requests.request("POST", url, headers=headers, data=payload)
 
         return response
-    #def deletspider(self, data):
+    def deletspider(self, data):
+        tasktimeid=data["timetaskid"]
+        url = f"http://127.0.0.1:8080/api/schedules/{tasktimeid}"
+
+        payload = {}
+        headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3YTZjYWFkMzAyMzNjOTIzNTAyNWM3ZCIsIm5iZiI6MTczODk4NDEyMywidXNlcm5hbWUiOiJhZG1pbiJ9.9xPs8dZ_0QwUh1uL_X-N58XoxsSFvBg6c7PUqSO0k3U',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Origin': 'http://127.0.0.1:8080',
+            'Pragma': 'no-cache',
+            'Referer': 'http://127.0.0.1:8080/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+            'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"'
+        }
+
+        response = requests.request("DELETE", url, headers=headers, data=payload)
+        if response.status_code == 200:
+            return "ok"
+        else:
+            return "no ok"
 
