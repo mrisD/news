@@ -94,6 +94,7 @@ async def update_crawler(crawler_id):
 
     try:
         data = request.get_json()  # 获取前端发送的JSON数据
+        print(data)
         result = collection.update_one({"_id": ObjectId(crawler_id)}, {"$set": data})
         if result.modified_count > 0:
             referer = request.headers.get('Referer')  # 获取 Referer 头部信息

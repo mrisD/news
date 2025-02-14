@@ -7,7 +7,7 @@ class CrawlabApi:
     def __init__(self):
         self.Authorization = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3YTZjYWFkMzAyMzNjOTIzNTAyNWM3ZCIsIm5iZiI6MTczODk4NDEyMywidXNlcm5hbWUiOiJhZG1pbiJ9.9xPs8dZ_0QwUh1uL_X-N58XoxsSFvBg6c7PUqSO0k3U'
     async def addspider(self, data):
-        spidername=data['new_config']['spidername']
+        spider_name=data['new_config']['spider_name']
         tasktime=data['new_config']['tasktime'][0]
         url = "http://localhost:8080/api/schedules"
         payload = json.dumps({
@@ -15,10 +15,10 @@ class CrawlabApi:
             "param" : f"-a config=\'{json.dumps(data)}\'",
             "mode": "random",
             "priority": 5,
-            "name": spidername,
+            "name": spider_name,
             "cron": tasktime,
             "spider_id": "67a6cad730233c9235025df3",
-            "cmd": f"scrapy crawl {spidername}"
+            "cmd": f"scrapy crawl {spider_name}"
         })
         headers = {
             'Accept': 'application/json, text/plain, */*',
@@ -40,7 +40,7 @@ class CrawlabApi:
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, data=payload) as response:
-                return  response.json()
+                return  await response.json()
     async def deletspider(self, data):
         tasktimeid=data["timetaskid"]
         url = f"http://127.0.0.1:8080/api/schedules/{tasktimeid}"
