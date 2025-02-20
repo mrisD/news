@@ -17,7 +17,7 @@ class CrawlabApi:
             "priority": 5,
             "name": spider_name,
             "cron": tasktime,
-            "spider_id": "67a6cad730233c9235025df3",
+            "spider_id": "67b2e5026fe6ca3ddb52c5a0",
             "cmd": f"scrapy crawl {spider_name}"
         })
         headers = {
